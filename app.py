@@ -168,18 +168,38 @@ def buscar_clientes():
     termo = request.args.get("q", "").strip()
     if not termo:
         return jsonify({"clientes": [], "total": 0})
+
     cpf_digits = re.sub(r"\D", "", termo)
-    cpf_fmt = f"{cpf_digits[:3]}.{cpf_digits[3:6]}.{cpf_digits[6:9]}-{cpf_digits[9:]}" if len(cpf_digits) == 11 else termo
+    cpf_fmt = f"{cpf_digits[:3]}.{cpf_digits[3:6]}.{cpf_digits[6:9]}-{cpf_digits[9:]}" if len(cpf_digits) == 11 else ""
+
     try:
         with get_connection() as conn:
             cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            cur.execute(
-                """SELECT * FROM clientes
-                   WHERE nome ILIKE %s OR cpf ILIKE %s OR cpf ILIKE %s OR regexp_replace(cpf, '\\D', '', 'g') ILIKE %s
-                   ORDER BY nome LIMIT 50""",
-                (f"%{termo}%", f"%{termo}%", f"%{cpf_fmt}%", f"%{cpf_digits}%")
-            )
+
+            where_parts = ["nome ILIKE %s", "cpf ILIKE %s"]
+            params = [f"%{termo}%", f"%{termo}%"]
+
+            # Só adiciona busca por CPF em dígitos quando houver dígitos no termo;
+            # evita '%'+''+'%' => '%%' que retornava praticamente tudo.
+            if cpf_digits:
+                where_parts.append("regexp_replace(cpf, '\\D', '', 'g') ILIKE %s")
+                params.append(f"%{cpf_digits}%")
+
+            if cpf_fmt:
+                where_parts.append("cpf ILIKE %s")
+                params.append(f"%{cpf_fmt}%")
+
+            sql = f"""
+                SELECT *
+                FROM clientes
+                WHERE {' OR '.join(where_parts)}
+                ORDER BY nome
+                LIMIT 50
+            """
+
+            cur.execute(sql, params)
             rows = cur.fetchall()
+
         return jsonify({"clientes": rows_to_json(rows), "total": len(rows)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
