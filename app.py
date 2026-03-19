@@ -500,6 +500,13 @@ def init_db():
             )
         conn.commit()
 
-if __name__ == "__main__":
+# Em ambiente serverless (Vercel), __main__ não é executado.
+# Inicializa schema ao importar o app para garantir tabelas existentes.
+try:
     init_db()
+except Exception as e:
+    # Mantém logs sem derrubar import; rotas retornarão erro detalhado se conexão falhar.
+    print(f"[init_db] aviso: {e}")
+
+if __name__ == "__main__":
     app.run(host=Config.HOST, port=Config.PORT, debug=Config.DEBUG)
