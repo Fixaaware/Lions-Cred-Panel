@@ -1,0 +1,45 @@
+# Ambiente Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Build / distribuição
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Ferramentas e testes
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# IDE / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Segredos / ambiente
+.env
+.env.*
+!.env.example
+
+# Banco/local data (não versionar)
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+
+# Logs
+*.log
+
+# Node (caso use Vercel CLI localmente)
+node_modules/
+
+# Vercel local metadata
+.vercel/
