@@ -1255,14 +1255,17 @@ var debouncedDashSearch = debounce(function(q) {
   apiFetch('/api/clientes/buscar?q=' + encodeURIComponent(q)).then(function(d) {
     if (!d.clientes.length) { el.innerHTML = '<p class="text-sm text-3 py-2">Sem resultados.</p>'; return; }
     el.innerHTML = d.clientes.slice(0, 5).map(function(c) {
-      return '<div class="flex items-center justify-between px-4 py-3 rounded-xl trow cursor-pointer" style="border:1px solid var(--border);background:var(--card2)" data-cpf="' + escH(c.cpf) + '" onclick="consultaRapida(this.dataset.cpf)">' +
-        '<div class="flex items-center gap-3"><div class="avatar w-9 h-9 text-sm">' + c.nome.charAt(0) + '</div>' +
-        '<div><p class="text-sm font-semibold text-1">' + hl(escH(c.nome), q) + '</p>' +
-        '<p class="text-xs text-3 cpf-display">' + hl(escH(fmtCPF(c.cpf)), q) + '</p></div>' +
+      return '<div class="flex items-center justify-between px-4 py-3 rounded-xl trow cursor-pointer mb-2 last:mb-0" style="border:1px solid var(--border);background:var(--card2)" data-cpf="' + escH(c.cpf) + '" onclick="consultaRapida(this.dataset.cpf)">' +
+        '<div class="flex items-center gap-3">' +
+          '<div class="avatar w-9 h-9 text-sm">' + c.nome.charAt(0) + '</div>' +
+          '<div><p class="text-sm font-semibold text-1">' + hl(escH(c.nome), q) + '</p>' +
+          '<p class="text-xs text-3 cpf-display">' + hl(escH(fmtCPF(c.cpf)), q) + '</p></div>' +
+        '</div>' +
         '<div class="flex gap-2">' + badge(c.status) +
           (PERM.canEdit() ? '<button onclick="event.stopPropagation();openEditById(' + c.id + ')" class="p-1.5 rounded-lg muted-bg text-2 hover:text-blue-400" style="border:1px solid var(--border)" title="Editar"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>' : '') +
           (PERM.canDelete() ? '<button onclick="confirmarExclusao(' + c.id + ',refreshConsulta)" class="p-1.5 rounded-lg muted-bg text-2 hover:text-red-400" style="border:1px solid var(--border)" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>' : '') +
-        '</div></div>';
+        '</div>' +
+      '</div>';
     }).join('');
     lucide.createIcons();
   }).catch(function(e) { el.innerHTML = '<p class="text-red-400 text-xs">' + e.message + '</p>'; });
