@@ -397,6 +397,10 @@ def criar_usuario():
         return jsonify({"error": "Nome e senha são obrigatórios."}), 400
     if perfil not in ('Desenvolvedor','Administração','Visualização'):
         return jsonify({"error": "Perfil inválido."}), 400
+    # Administração não pode criar usuário Desenvolvedor
+    caller_perfil = session.get('usuario_perfil')
+    if caller_perfil == 'Administração' and perfil == 'Desenvolvedor':
+        return jsonify({"error": "Sem permissão para criar usuário Desenvolvedor."}), 403
     try:
         with get_connection() as conn:
             cur = conn.cursor()
@@ -418,12 +422,20 @@ def atualizar_usuario(uid):
     nome   = data.get("nome",  "").strip()
     senha  = data.get("senha", "").strip()
     perfil = data.get("perfil", "").strip()
+    caller_perfil = session.get('usuario_perfil')
     try:
         with get_connection() as conn:
             cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            cur.execute("SELECT id FROM usuarios WHERE id=%s", (uid,))
-            if not cur.fetchone():
+            cur.execute("SELECT id, perfil FROM usuarios WHERE id=%s", (uid,))
+            target = cur.fetchone()
+            if not target:
                 return jsonify({"error": "Usuário não encontrado."}), 404
+            # Administração não pode editar Desenvolvedor nem atribuir perfil Desenvolvedor
+            if caller_perfil == 'Administração':
+                if (target['perfil'] if isinstance(target, dict) else target[1]) == 'Desenvolvedor':
+                    return jsonify({"error": "Sem permissão para editar usuário Desenvolvedor."}), 403
+                if perfil == 'Desenvolvedor':
+                    return jsonify({"error": "Sem permissão para atribuir perfil Desenvolvedor."}), 403
             if nome:
                 cur.execute("SELECT id FROM usuarios WHERE nome=%s AND id!=%s", (nome, uid))
                 if cur.fetchone():
@@ -448,12 +460,18 @@ def atualizar_usuario(uid):
 def remover_usuario(uid):
     if uid == session.get('usuario_id'):
         return jsonify({"error": "Você não pode remover o próprio usuário."}), 400
+    caller_perfil = session.get('usuario_perfil')
     try:
         with get_connection() as conn:
-            cur = conn.cursor()
-            cur.execute("SELECT id FROM usuarios WHERE id=%s", (uid,))
-            if not cur.fetchone():
+            cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cur.execute("SELECT id, perfil FROM usuarios WHERE id=%s", (uid,))
+            target = cur.fetchone()
+            if not target:
                 return jsonify({"error": "Usuário não encontrado."}), 404
+            # Administração não pode remover Desenvolvedor
+            if caller_perfil == 'Administração':
+                if (target['perfil'] if isinstance(target, dict) else target[1]) == 'Desenvolvedor':
+                    return jsonify({"error": "Sem permissão para remover usuário Desenvolvedor."}), 403
             cur.execute("DELETE FROM usuarios WHERE id=%s", (uid,))
             conn.commit()
         return jsonify({"message": "Usuário removido."})
