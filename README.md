@@ -1,4 +1,4 @@
-# 🦁 Lions Cred — Sistema de Clientes
+# Lions Cred — Sistema de Clientes
 
 Sistema web moderno de cadastro e consulta de clientes.
 
